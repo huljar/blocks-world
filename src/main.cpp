@@ -31,6 +31,16 @@ int main(int argc, char** argv) {
 	// Create CNF formula
 	CNF cnf;
 
+	// Add equality constraints
+	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
+		for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
+			Literal equal(*it == *jt, Predicate(Predicate::EQUAL, *it, *jt, "", 0));
+			Clause equalClause;
+			equalClause << equal;
+			cnf << equalClause;
+		}
+	}
+
 	// Add domain constraints
 	// The table is always clear
 	for(int i = 1; i <= time; ++i) {
