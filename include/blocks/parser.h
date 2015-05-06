@@ -1,6 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <blocks/predicate.h>
+#include <blocks/cnf.h>
 #include <string>
 #include <vector>
 #include <set>
@@ -26,6 +28,8 @@ public:
 
 	static world_state parseState(const std::string& state);
 	static block_set extractBlocks(const world_state& world);
+
+	static std::vector<Predicate> extractMoves(const std::string& result, const CNF& cnf, bool sort); 
 
 };
 

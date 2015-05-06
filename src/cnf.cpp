@@ -45,6 +45,16 @@ void CNF::writeDimacsCnf(FILE* out) {
 	}
 }
 
+void CNF::invertMapping() {
+	for(std::unordered_map<Predicate, unsigned int, PredicateHasher>::const_iterator it = mapping.cbegin(); it != mapping.cend(); ++it) {
+		inverted.insert(std::make_pair(it->second, &it->first));
+	}
+}
+
+Predicate CNF::findPredicate(unsigned int number) const {
+	return *inverted.at(number);
+}
+
 unsigned int CNF::countClauses() const {
 	return clauses.size();
 }

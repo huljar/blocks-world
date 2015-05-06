@@ -1,4 +1,6 @@
 #include <blocks/parser.h>
+#include <algorithm>
+#include <cstdlib>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -38,6 +40,37 @@ Parser::block_set Parser::extractBlocks(const world_state& world) {
 		for(const_pile_iterator jt = it->cbegin(); jt != it->cend(); ++jt) {
 			ret.insert(*jt);
 		}
+	}
+
+	return ret;
+}
+
+std::vector<Predicate> Parser::extractMoves(const std::string& result, const CNF& cnf, bool sort) {
+	std::vector<Predicate> ret;
+
+	// Split the result string at spaces
+	std::stringstream resultstream(result);
+	std::string assignment;
+
+	// First read the "SAT" line and ignore it
+	std::getline(resultstream, assignment);
+
+	// Now iterate over the assignments
+	while(std::getline(resultstream, assignment, ' ')) {
+		int value = std::stoi(assignment);
+		if(value < 0) continue;
+		if(value == 0) break;
+
+		Predicate pred = cnf.findPredicate((unsigned int)value);
+		if(pred.getType() == Predicate::MOVE) {
+			ret.push_back(pred);
+		}
+	}
+
+	if(sort) {
+		std::sort(ret.begin(), ret.end(), [](const Predicate& a, const Predicate& b) {
+			return a.getTime() < b.getTime();
+		});
 	}
 
 	return ret;

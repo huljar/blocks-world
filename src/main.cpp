@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
 				for(Parser::block_set_iterator lt = existingBlocks.begin(); lt != existingBlocks.end(); ++lt) {
 					for(Parser::block_set_iterator mt = existingBlocks.begin(); mt != existingBlocks.end(); ++mt) {
 						for(Parser::block_set_iterator nt = existingBlocks.begin(); nt != existingBlocks.end(); ++nt) {
-							for(int i = 0; i < time; ++i) {
+							for(int i = 1; i < time; ++i) {
 								Literal move1(false, Predicate(Predicate::MOVE, *it, *kt, *mt, i));
 								Literal move2(false, Predicate(Predicate::MOVE, *jt, *lt, *nt, i));
 								Literal XX(true, Predicate(Predicate::EQUAL, *it, *jt, "", 0));
@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Some action occurs at every time
-	for(int i = 0; i < time; ++i) {
+	for(int i = 1; i < time; ++i) {
 		Clause action;
 		for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
 			for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
 		for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
 			for(Parser::block_set_iterator kt = existingBlocks.begin(); kt != existingBlocks.end(); ++kt) {
 				for(Parser::block_set_iterator lt = existingBlocks.begin(); lt != existingBlocks.end(); ++lt) {
-					for(int i = 0; i < time; ++i) {
+					for(int i = 1; i < time; ++i) {
 						Literal clear(false, Predicate(Predicate::CLEAR, *jt, "", "", i));
 						Literal move(false, Predicate(Predicate::MOVE, *it, *kt, *lt, i));
 						Literal X2Y(true, Predicate(Predicate::EQUAL, *jt, *kt, "", 0));
@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
 			for(Parser::block_set_iterator kt = existingBlocks.begin(); kt != existingBlocks.end(); ++kt) {
 				for(Parser::block_set_iterator lt = existingBlocks.begin(); lt != existingBlocks.end(); ++lt) {
 					for(Parser::block_set_iterator mt = existingBlocks.begin(); mt != existingBlocks.end(); ++mt) {
-						for(int i = 0; i < time; ++i) {
+						for(int i = 1; i < time; ++i) {
 							Literal on(false, Predicate(Predicate::ON, *jt, *lt, "", i));
 							Literal move(false, Predicate(Predicate::MOVE, *it, *kt, *mt, i));
 							Literal X1X2(true, Predicate(Predicate::EQUAL, *it, *jt, "", 0));
@@ -378,7 +378,24 @@ int main(int argc, char** argv) {
 	fclose(reader);
 	close(outputpipe[0]);
 
-	std::cout << "miniSAT finished execution." << std::endl;
+	// Parse the result string and extract move actions
+	if(result.compare(0, 3, "SAT") == 0) {
+		// Problem is satisfiable
+		std::cout << "Problem is satisfiable!" << std::endl << std::endl << "Computed plan:" << std::endl;
+
+		// Invert the mapping from predicate to natural numbers and extract the move predicates
+		cnf.invertMapping();
+		std::vector<Predicate> moves = Parser::extractMoves(result, cnf, true);
+
+		// Print the moves
+		for(std::vector<Predicate>::iterator it = moves.begin(); it != moves.end(); ++it) {
+			printf("%3i: Move %s from %s to %s.\n", it->getTime(), it->getBlockX().c_str(), it->getBlockY().c_str(), it->getBlockZ().c_str());
+		}
+	}
+	else {
+		// Problem is unsatisfiable
+		std::cout << "Problem is unsatisfiable (no valid plan found)." << std::endl;
+	}
 
 	return 0;
 }
