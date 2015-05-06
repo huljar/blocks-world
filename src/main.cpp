@@ -3,6 +3,7 @@
 #include <blocks/clause.h>
 #include <blocks/literal.h>
 #include <blocks/predicate.h>
+#include <blocks/predicatehasher.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -287,4 +288,8 @@ int main(int argc, char** argv) {
 			}
 		}
 	}
+
+	// Create mapping of predicates to natural numbers
+	cnf.createMapping();
+	cnf.writeDimacsCnf(std::cout);
 }

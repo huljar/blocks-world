@@ -13,6 +13,7 @@ class blocks::Clause {
 public:
 	Clause();
 	Clause& operator<<(const Literal& literal);
+	const std::vector<Literal>& getLiterals() const;
 
 private:
 	std::vector<Literal> literals;

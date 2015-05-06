@@ -13,7 +13,13 @@ public:
 	typedef enum { ON, CLEAR, MOVE, EQUAL } pred_type;
 
 	Predicate(pred_type type, const std::string& blockX, const std::string& blockY, const std::string& blockZ, int time);
-	//Predicate(pred_type type, const char* blockX, const char* blockY, const char* blockZ, int time);
+	bool operator==(const Predicate& other) const;
+
+	pred_type getType() const;
+	std::string getBlockX() const;
+	std::string getBlockY() const;
+	std::string getBlockZ() const;
+	int getTime() const;
 
 private:
 	pred_type type;

@@ -7,11 +7,12 @@ CC := g++
 CFLAGS := -c -std=c++11 -Wall -I$(INCLUDEPATH)
 LFLAGS := -std=c++11 -Wall
 
-OBJFILES := $(BUILDPATH)/cnf.o			\
-			$(BUILDPATH)/clause.o		\
-			$(BUILDPATH)/literal.o		\
-			$(BUILDPATH)/predicate.o	\
-			$(BUILDPATH)/parser.o		\
+OBJFILES := $(BUILDPATH)/cnf.o				\
+			$(BUILDPATH)/clause.o			\
+			$(BUILDPATH)/literal.o			\
+			$(BUILDPATH)/predicate.o		\
+			$(BUILDPATH)/predicatehasher.o 	\
+			$(BUILDPATH)/parser.o			\
 			$(BUILDPATH)/main.o
 
 
