@@ -4,10 +4,15 @@
 #include <blocks/literal.h>
 #include <blocks/predicate.h>
 #include <blocks/predicatehasher.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <set>
+
+#include <sys/wait.h>
+#include <cstdio>
+#include <unistd.h>
 
 using namespace blocks;
 
@@ -291,5 +296,89 @@ int main(int argc, char** argv) {
 
 	// Create mapping of predicates to natural numbers
 	cnf.createMapping();
-	cnf.writeDimacsCnf(std::cout);
+
+	// Create pipe and fork miniSAT
+	int pid;
+	int inputpipe[2];
+	int outputpipe[2];
+	FILE* writer;
+	FILE* reader;
+
+	if(pipe(inputpipe)) {
+		std::cerr << "Failed to create input pipe." << std::endl;
+		exit(1);
+	}
+
+	if(pipe(outputpipe)) {
+		std::cerr << "Failed to create output pipe." << std::endl;
+		exit(1);
+	}
+
+	pid = fork();
+	if(pid == 0) {
+		// Child process
+		close(inputpipe[1]); //close write end from input pipe
+		close(outputpipe[0]); //close read end from output pipe
+
+		dup2(inputpipe[0], 0); //duplicate input pipe read end to stdin
+		dup2(outputpipe[1], 1); //duplicate output pipe write end to stdout
+
+		close(inputpipe[0]); //pipe is no longer needed
+		close(outputpipe[1]); //pipe is no longer needed
+
+		close(2); //close stderr to suppress miniSAT statistics
+
+		execl("/usr/bin/minisat", "minisat", "/dev/stdin", "/dev/stdout", (char*)NULL); //call miniSAT
+		
+		// If the program reaches this point, an error has occurred
+		std::cerr << "Failed to execute miniSAT (/usr/bin/minisat)." << std::endl;
+		exit(1);
+	}
+	else if(pid < 0) {
+		// Fork failed
+		std::cerr << "Unable to fork sub-process." << std::endl;
+		exit(1);
+	}
+	else {
+		// Parent process
+		close(inputpipe[0]); //close read end of input pipe
+		close(outputpipe[1]); //close write end of output pipe
+
+		writer = fdopen(inputpipe[1], "w");
+		if(writer == NULL) {
+			std::cerr << "Unable to open write end of input pipe." << std::endl;
+			exit(1);
+		}
+
+		reader = fdopen(outputpipe[0], "r");
+		if(reader == NULL) {
+			std::cerr << "Unable to open read end of output pipe." << std::endl;
+			exit(1);
+		}
+	}
+
+	// Write CNF to input pipe, then close it so miniSAT can start
+	cnf.writeDimacsCnf(writer);
+	fclose(writer);
+	close(inputpipe[1]);
+
+	// Wait for miniSAT to finish
+	int status;
+	wait(&status);
+
+	// Read out result
+	std::string result;
+	char buffer[4096];
+
+	while(!feof(reader)) {
+		fread(buffer, sizeof(char), 4096, reader);
+		result.append(buffer, 4096);
+	}
+
+	fclose(reader);
+	close(outputpipe[0]);
+
+	std::cout << "miniSAT finished execution." << std::endl;
+
+	return 0;
 }

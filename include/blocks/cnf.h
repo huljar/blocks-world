@@ -19,7 +19,7 @@ public:
 	CNF& operator<<(const Clause& clause);
 	const std::vector<Clause>& getClauses() const;
 	void createMapping();
-	void writeDimacsCnf(std::ostream& out);
+	void writeDimacsCnf(FILE* out);
 	unsigned int countClauses() const;
 	unsigned int countVariables();
 

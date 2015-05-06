@@ -32,15 +32,16 @@ void CNF::createMapping() {
 	mapUpdated = true;
 }
 
-void CNF::writeDimacsCnf(std::ostream& out) {
+void CNF::writeDimacsCnf(FILE* out) {
 	if(!mapUpdated) createMapping();
 
-	out << "p cnf " << countVariables() << countClauses() << std::endl;
+	fprintf(out, "p cnf %u %u\n", countVariables(), countClauses());
 	for(std::vector<Clause>::const_iterator it = clauses.cbegin(); it != clauses.cend(); ++it) {
 		for(std::vector<Literal>::const_iterator jt = it->getLiterals().cbegin(); jt != it->getLiterals().cend(); ++jt) {
-			out << (jt->getValue() ? "" : "-") << mapping[jt->getPredicate()] << " ";
+			if(!jt->getValue()) fprintf(out, "-");
+			fprintf(out, "%u ", mapping[jt->getPredicate()]);
 		}
-		out << "0" << std::endl;
+		fprintf(out, "0\n");
 	}
 }
 
