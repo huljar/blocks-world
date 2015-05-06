@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 
 	// Add domain constraints
 	// The table is always clear
-	for(int i = 0; i < time; ++i) {
+	for(int i = 1; i <= time; ++i) {
 		Literal clear(true, Predicate(Predicate::CLEAR, tableStr, "", "", i));
 		Clause clear_clause;
 		clear_clause << clear;
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
 	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
 		for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
 			Literal equal(true, Predicate(Predicate::EQUAL, *jt, tableStr, "", 0));
-			for(int i = 0; i < time; ++i) {
+			for(int i = 1; i <= time; ++i) {
 				Literal clear(false, Predicate(Predicate::CLEAR, *jt, "", "", i));
 				Literal on(false, Predicate(Predicate::ON, *it, *jt, "", i));
 				Clause clear_support;
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 
 	// A block cannot be on itself
 	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
-		for(int i = 0; i < time; ++i) {
+		for(int i = 1; i <= time; ++i) {
 			Literal on(false, Predicate(Predicate::ON, *it, *it, "", i));
 			Clause itself;
 			itself << on;
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 
 	// The table cannot be on another block
 	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
-		for(int i = 0; i < time; ++i) {
+		for(int i = 1; i <= time; ++i) {
 			Literal on(false, Predicate(Predicate::ON, tableStr, *it, "", i));
 			Clause table;
 			table << on;
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 		for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
 			for(Parser::block_set_iterator kt = existingBlocks.begin(); kt != existingBlocks.end(); ++kt) {
 				Literal equal(true, Predicate(Predicate::EQUAL, *jt, *kt, "", 0));
-				for(int i = 0; i < time; ++i) {
+				for(int i = 1; i <= time; ++i) {
 					Literal on1(false, Predicate(Predicate::ON, *it, *jt, "", i));
 					Literal on2(false, Predicate(Predicate::ON, *it, *kt, "", i));
 					Clause one;
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 			Literal equal2(true, Predicate(Predicate::EQUAL, *it, *jt, "", 0));
 			for(Parser::block_set_iterator kt = existingBlocks.begin(); kt != existingBlocks.end(); ++kt) {
 				Literal equal1(true, Predicate(Predicate::EQUAL, *kt, tableStr, "", 0));
-				for(int i = 0; i < time; ++i) {
+				for(int i = 1; i <= time; ++i) {
 					Literal on1(false, Predicate(Predicate::ON, *it, *kt, "", i));
 					Literal on2(false, Predicate(Predicate::ON, *jt, *kt, "", i));
 					Clause support;
@@ -109,13 +109,37 @@ int main(int argc, char** argv) {
 
 	// Add initial state
 	for(Parser::world_state_iterator it = initial.begin(); it != initial.end(); ++it) {
-		Literal onTable(true, Predicate(Predicate::ON, *it->begin(), tableStr, "", 0));
+		Literal onTable(true, Predicate(Predicate::ON, *it->begin(), tableStr, "", 1));
 		Clause onTableClause;
 		onTableClause << onTable;
 		cnf << onTableClause;
 		for(Parser::pile_iterator jt = it->begin() + 1; jt != it->end(); ++jt) {
-			Literal
+			Literal onBlock(true, Predicate(Predicate::ON, *jt, *(jt - 1), "", 1));
+			Clause onBlockClause;
+			onBlockClause << onBlock;
+			cnf << onBlockClause;
 		}
+		Literal topClear(true, Predicate(Predicate::CLEAR, *(it->end() - 1), "", "", 1));
+		Clause topClearClause;
+		topClearClause << topClear;
+		cnf << topClearClause;
 	}
 
+	// Add goal state
+	for(Parser::world_state_iterator it = goal.begin(); it != goal.end(); ++it) {
+		Literal onTable(true, Predicate(Predicate::ON, *it->begin(), tableStr, "", time));
+		Clause onTableClause;
+		onTableClause << onTable;
+		cnf << onTableClause;
+		for(Parser::pile_iterator jt = it->begin() + 1; jt != it->end(); ++jt) {
+			Literal onBlock(true, Predicate(Predicate::ON, *jt, *(jt - 1), "", time));
+			Clause onBlockClause;
+			onBlockClause << onBlock;
+			cnf << onBlockClause;
+		}
+		Literal topClear(true, Predicate(Predicate::CLEAR, *(it->end() - 1), "", "", time));
+		Clause topClearClause;
+		topClearClause << topClear;
+		cnf << topClearClause;
+	}	
 }
