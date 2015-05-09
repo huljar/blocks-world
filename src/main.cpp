@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
 
 	// Create CNF formula
 	CNF cnf;
+	std::cout << "Generating domain constraints ..." << std::endl;
 
 	// Add equality constraints
 	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
@@ -124,6 +125,8 @@ int main(int argc, char** argv) {
 	}
 
 	// Add states
+	std::cout << "Generating initial and goal state clauses ..." << std::endl;
+
 	// Initial state
 	for(Parser::world_state_iterator it = initial.begin(); it != initial.end(); ++it) {
 		Literal onTable(true, Predicate(Predicate::ON, *it->begin(), tableStr, "", 1));
@@ -161,6 +164,8 @@ int main(int argc, char** argv) {
 	}	
 
 	// Add action axioms
+	std::cout << "Generating move action axioms ..." << std::endl;
+
 	// Move X from Y to Z
 	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
 		for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
@@ -253,6 +258,8 @@ int main(int argc, char** argv) {
 	}
 
 	// Add frame axioms
+	std::cout << "Generating frame axioms ..." << std::endl;
+
 	// A clear block which is not covered as a result of a move action stays clear
 	for(Parser::block_set_iterator it = existingBlocks.begin(); it != existingBlocks.end(); ++it) {
 		for(Parser::block_set_iterator jt = existingBlocks.begin(); jt != existingBlocks.end(); ++jt) {
@@ -314,6 +321,8 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
+	std::cout << "Launching miniSAT ..." << std::endl;
+
 	pid = fork();
 	if(pid == 0) {
 		// Child process
@@ -367,6 +376,8 @@ int main(int argc, char** argv) {
 	wait(&status);
 
 	// Read out result
+	std::cout << "miniSAT terminated, parsing result ..." << std::endl;
+
 	std::string result;
 	char buffer[4096];
 
@@ -381,7 +392,7 @@ int main(int argc, char** argv) {
 	// Parse the result string and extract move actions
 	if(result.compare(0, 3, "SAT") == 0) {
 		// Problem is satisfiable
-		std::cout << "Problem is satisfiable!" << std::endl << std::endl << "Computed plan:" << std::endl;
+		std::cout << std::endl << "Problem is satisfiable!" << std::endl << std::endl << "Computed plan:" << std::endl;
 
 		// Invert the mapping from predicate to natural numbers and extract the move predicates
 		cnf.invertMapping();
@@ -394,7 +405,7 @@ int main(int argc, char** argv) {
 	}
 	else {
 		// Problem is unsatisfiable
-		std::cout << "Problem is unsatisfiable (no valid plan found)." << std::endl;
+		std::cout << std::endl << "Problem is unsatisfiable (no valid plan found)." << std::endl;
 	}
 
 	return 0;
