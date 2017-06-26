@@ -17,11 +17,13 @@
 using namespace blocks;
 
 const std::string tableStr = "table";
+const std::string minisatPath = "/usr/bin/minisat";
+const std::string claspPath = "/usr/bin/clasp";
 
 int main(int argc, char** argv) {
 	// Check command line arguments
-	if(argc != 4) {
-		std::cerr << "Usage: " << argv[0] << " initial_state goal_state time_steps" << std::endl;
+	if(argc < 4 || argc > 5) {
+		std::cerr << "Usage: " << argv[0] << " initial_state goal_state time_steps [useMaxSAT]" << std::endl;
 		exit(1);
 	}
 
@@ -29,6 +31,7 @@ int main(int argc, char** argv) {
 	Parser::world_state initial = Parser::parseState(argv[1]);
 	Parser::world_state goal = Parser::parseState(argv[2]);
 	int time = atoi(argv[3]);
+	bool maxSAT = argc == 5;
 
 	// Extract existing blocks
 	Parser::block_set existingBlocks = Parser::extractBlocks(initial);
@@ -304,7 +307,7 @@ int main(int argc, char** argv) {
 	// Create mapping of predicates to natural numbers
 	cnf.createMapping();
 
-	// Create pipe and fork miniSAT
+	// Create pipe and fork miniSAT/clasp
 	int pid;
 	int inputpipe[2];
 	int outputpipe[2];
@@ -321,7 +324,7 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
-	std::cout << "Launching miniSAT ..." << std::endl;
+	std::cout << "Launching " << (maxSAT ? "clasp" : "miniSAT") << " ..." << std::endl;
 
 	pid = fork();
 	if(pid == 0) {
@@ -337,10 +340,16 @@ int main(int argc, char** argv) {
 
 		close(2); //close stderr to suppress miniSAT statistics
 
-		execl("/usr/bin/minisat", "minisat", "/dev/stdin", "/dev/stdout", (char*)NULL); //call miniSAT
+		if(maxSAT) {
+			execl(claspPath.c_str(), "clasp", (char*)NULL); // call clasp
+			std::cerr << "Failed to execute miniSAT (" << claspPath << ")." << std::endl;
+		}
+		else {
+			execl(minisatPath.c_str(), "minisat", "/dev/stdin", "/dev/stdout", (char*)NULL); //call miniSAT
+			std::cerr << "Failed to execute clasp (" << minisatPath << ")." << std::endl;
+		}
 		
 		// If the program reaches this point, an error has occurred
-		std::cerr << "Failed to execute miniSAT (/usr/bin/minisat)." << std::endl;
 		exit(1);
 	}
 	else if(pid < 0) {
@@ -376,7 +385,7 @@ int main(int argc, char** argv) {
 	wait(&status);
 
 	// Read out result
-	std::cout << "miniSAT terminated, parsing result ..." << std::endl;
+	std::cout << (maxSAT ? "clasp" : "miniSAT") << " terminated, parsing result ..." << std::endl;
 
 	std::string result;
 	char buffer[4096];
@@ -385,6 +394,8 @@ int main(int argc, char** argv) {
 		fread(buffer, sizeof(char), 4096, reader);
 		result.append(buffer, 4096);
 	}
+
+	//std::cout << std::endl << "RESULT:" << std::endl << result << std::endl << std::endl;
 
 	fclose(reader);
 	close(outputpipe[0]);
